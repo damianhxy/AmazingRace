@@ -7,20 +7,55 @@ const LEGACY_PATH = path.join(__dirname, "..", "database", "questions.js");
 
 let problems = {};
 
-function loadProblems() {
-  try {
-    const content = fs.readFileSync(QUESTIONS_PATH, "utf8");
-    problems = JSON.parse(content);
-  } catch {
-    try {
-      const content = fs.readFileSync(LEGACY_PATH, "utf8");
-      const m = { exports: {} };
-      new Function("module", "exports", content)(m, m.exports);
-      problems = m.exports;
-      fs.writeFileSync(QUESTIONS_PATH, JSON.stringify(problems, null, 2));
-    } catch {
-      problems = {};
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function validateProblems(value) {
+  if (!isRecord(value)) throw new Error("Problem data must be an object");
+
+  for (const [category, categoryProblems] of Object.entries(value)) {
+    if (!/^[A-Z]{2}$/.test(category) || !isRecord(categoryProblems)) {
+      throw new Error(`Invalid problem category: ${category}`);
     }
+
+    for (const [id, problem] of Object.entries(categoryProblems)) {
+      if (!/^\d{2}$/.test(id) || !isRecord(problem)) {
+        throw new Error(`Invalid problem ID: ${category}${id}`);
+      }
+      // Omitted case_sensitive means case-insensitive, as in the original problem format.
+      if (problem.case_sensitive !== undefined && typeof problem.case_sensitive !== "boolean") {
+        throw new Error(`${category}${id} case_sensitive must be true or false`);
+      }
+      if (
+        !Array.isArray(problem.answers) ||
+        problem.answers.length === 0 ||
+        problem.answers.some((answer) => typeof answer !== "string" || answer.length === 0)
+      ) {
+        throw new Error(`${category}${id} must have at least one non-empty answer`);
+      }
+      if (!Number.isSafeInteger(problem.stars) || problem.stars < 0) {
+        throw new Error(`${category}${id} must have a non-negative integer star value`);
+      }
+    }
+  }
+
+  return value;
+}
+
+function loadProblems() {
+  if (fs.existsSync(QUESTIONS_PATH)) {
+    const content = fs.readFileSync(QUESTIONS_PATH, "utf8");
+    problems = validateProblems(JSON.parse(content));
+    return;
+  }
+
+  if (fs.existsSync(LEGACY_PATH)) {
+    const content = fs.readFileSync(LEGACY_PATH, "utf8");
+    const m = { exports: {} };
+    new Function("module", "exports", content)(m, m.exports);
+    problems = validateProblems(m.exports);
+    fs.writeFileSync(QUESTIONS_PATH, JSON.stringify(problems, null, 2));
   }
 }
 
@@ -48,7 +83,8 @@ exports.check = function (category, id, answer) {
 };
 
 exports.update = async function (data) {
-  const parsed = JSON.parse(data);
+  if (typeof data !== "string") throw new Error("Problem data is required");
+  const parsed = validateProblems(JSON.parse(data));
   await fsPromises.writeFile(QUESTIONS_PATH, JSON.stringify(parsed, null, 2));
   problems = parsed;
 };
