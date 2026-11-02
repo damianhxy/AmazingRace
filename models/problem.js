@@ -37,13 +37,14 @@ exports.check = function (category, id, answer) {
   if (!problems[category][id]) {
     throw new Error("Problem with that ID does not exist");
   }
-  if (!problems[category][id].case_sensitive) {
-    answer = answer.toLowerCase();
-  }
-  if (!problems[category][id].answers.includes(answer)) {
+  const problem = problems[category][id];
+  const answerMatches = problem.case_sensitive
+    ? problem.answers.includes(answer)
+    : problem.answers.some((candidate) => candidate.toLowerCase() === answer.toLowerCase());
+  if (!answerMatches) {
     throw new Error("Wrong answer");
   }
-  return problems[category][id].stars;
+  return problem.stars;
 };
 
 exports.update = async function (data) {
