@@ -31,10 +31,10 @@ exports.all = function () {
 };
 
 exports.check = function (category, id, answer) {
-  if (!problems[category]) {
+  if (!Object.hasOwn(problems, category)) {
     throw new Error("Category does not exist");
   }
-  if (!problems[category][id]) {
+  if (!Object.hasOwn(problems[category], id)) {
     throw new Error("Problem with that ID does not exist");
   }
   const problem = problems[category][id];
