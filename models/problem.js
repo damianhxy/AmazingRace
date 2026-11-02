@@ -85,6 +85,13 @@ exports.check = function (category, id, answer) {
 exports.update = async function (data) {
   if (typeof data !== "string") throw new Error("Problem data is required");
   const parsed = validateProblems(JSON.parse(data));
-  await fsPromises.writeFile(QUESTIONS_PATH, JSON.stringify(parsed, null, 2));
+  const temporaryPath = `${QUESTIONS_PATH}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    await fsPromises.writeFile(temporaryPath, JSON.stringify(parsed, null, 2));
+    await fsPromises.rename(temporaryPath, QUESTIONS_PATH);
+  } catch (err) {
+    await fsPromises.rm(temporaryPath, { force: true });
+    throw err;
+  }
   problems = parsed;
 };
