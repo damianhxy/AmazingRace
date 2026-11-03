@@ -74,7 +74,7 @@ exports.authenticate = function (username, password) {
 
 exports.leaderboard = function () {
   const rows = db
-    .prepare("SELECT * FROM users ORDER BY admin DESC, score DESC, latest ASC, class ASC, name ASC")
+    .prepare("SELECT * FROM users ORDER BY admin ASC, score DESC, latest ASC, class ASC, name ASC")
     .all();
   return rows.map(exports._format);
 };
