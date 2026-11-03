@@ -121,10 +121,18 @@ router.post(
   }),
 );
 
-router.get("/signout", auth, function (req, res, next) {
+router.post("/signout", auth, function (req, res, next) {
   req.logout(function (err) {
     if (err) return next(err);
-    res.redirect("/");
+    req.session.destroy(function (destroyErr) {
+      if (destroyErr) return next(destroyErr);
+      res.clearCookie("connect.sid", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: req.app.get("env") === "production",
+      });
+      res.redirect("/");
+    });
   });
 });
 

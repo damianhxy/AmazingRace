@@ -48,7 +48,10 @@
                 </li>
                 {{/if}}
                 <li class="nav-item">
-                    <a class="nav-link" href="/users/signout"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                    <form action="/users/signout" method="post">
+                        <input type="hidden" name="csrfToken" value="{{csrfToken}}">
+                        <button type="submit" class="btn btn-link nav-link"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+                    </form>
                 </li>
                 {{/if}}
                 <li class="nav-item">
