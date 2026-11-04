@@ -13,13 +13,14 @@ router.get("/", admin, function (req, res) {
   });
 });
 
-router.post("/", admin, async function (req, res, next) {
+router.post("/", admin, async function (req, res) {
   try {
     await problem.update(req.body.data);
     req.session.success = "Problem(s) updated!";
     res.status(200).redirect("/admin");
   } catch (err) {
-    next(err);
+    req.session.error = err.message;
+    res.status(400).redirect("/admin");
   }
 });
 
