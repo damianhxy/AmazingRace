@@ -32,6 +32,15 @@ module.exports = function (app, express) {
   const sessionDb = new Database("./database/sessions.db");
   const isProduction = app.get("env") === "production";
 
+  // Behind an HTTPS proxy, req.secure (needed for the Secure session cookie) and
+  // req.ip (used by the rate limiters) only reflect the client when the proxy is trusted.
+  if (settings.TRUST_PROXY) {
+    const hops = Number(settings.TRUST_PROXY);
+    app.set("trust proxy", Number.isInteger(hops) ? hops : settings.TRUST_PROXY);
+  } else if (isProduction) {
+    console.warn("WARNING: TRUST_PROXY is not set; production session cookies need an HTTPS proxy");
+  }
+
   // Middleware
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(compression());
